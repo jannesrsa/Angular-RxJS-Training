@@ -37,6 +37,14 @@ export class ProductService {
       catchError(this.handleError)
     );
 
+  selectedProduct$: Observable<Product> = this.productsWithCategories$
+    .pipe(
+      map(products =>
+        products.find(product => product.id === 5)),
+      tap(product => console.log('Product: ', product),
+      catchError(this.handleError)
+    ));
+
   constructor(private http: HttpClient,
     private productCategoryService: ProductCategoryService,
     private supplierService: SupplierService) { }
