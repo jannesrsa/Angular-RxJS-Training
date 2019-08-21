@@ -81,7 +81,7 @@ export class ProductService {
       // The response body may contain clues as to what went wrong,
       console.error(
         `Backend returned code ${error.status}, ` +
-        `body was: ${JSON.stringify(error.body)}`);
+        `body was: ${JSON.stringify(error)}`);
     }
     // return an observable with a user-facing error message
     return throwError(
