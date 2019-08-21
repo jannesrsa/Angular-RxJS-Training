@@ -18,7 +18,7 @@ export class ProductListAltComponent {
 
   selectedProduct$: Observable<Product> = this.productService.selectedProduct$;
 
-  products$ = this.productService.productsWithCategories$
+  products$ = this.productService.productsWithAdd$
     .pipe(
       catchError(err => {
         this.errorMessageSubject.next(err);

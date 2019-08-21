@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 
-import { Observable, throwError, combineLatest, BehaviorSubject } from 'rxjs';
-import { catchError, tap, map } from 'rxjs/operators';
+import { Observable, throwError, combineLatest, BehaviorSubject, Subject, merge } from 'rxjs';
+import { catchError, tap, map, scan } from 'rxjs/operators';
 
 import { Product } from './product';
 import { Supplier } from '../suppliers/supplier';
@@ -59,7 +59,23 @@ export class ProductService {
     this.productSelectedSubject.next(selectedProductId);
   }
 
-  private fakeProduct() {
+  addProduct(newProduct?: Product): void {
+    newProduct = newProduct || this.fakeProduct();
+    this.productInsertedSubject.next(newProduct);
+  }
+
+  private productInsertedSubject = new Subject<Product>()
+  productInsertedAction$ = this.productInsertedSubject.asObservable();
+
+  productsWithAdd$ = merge(
+    this.productsWithCategories$,
+    this.productInsertedAction$
+  )
+    .pipe(
+      scan((acc: Product[], value: Product) => [...acc, value])
+    );
+
+  private fakeProduct(): Product {
     return {
       id: 42,
       productName: 'Another One',
@@ -69,7 +85,7 @@ export class ProductService {
       categoryId: 3,
       category: 'Toolbox',
       quantityInStock: 30
-    };
+    } as Product;
   }
 
   private handleError(error: HttpErrorResponse) {
