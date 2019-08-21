@@ -1,8 +1,10 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { EMPTY, Observable } from 'rxjs';
+import { EMPTY, Observable, Subject, combineLatest } from 'rxjs';
 import { ProductService } from './product.service';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, startWith } from 'rxjs/operators';
 import { Product } from './product';
+import { ProductCategory } from '../product-categories/product-category';
+import { ProductCategoryService } from '../product-categories/product-category.service';
 
 @Component({
   templateUrl: './product-list.component.html',
@@ -12,9 +14,27 @@ import { Product } from './product';
 export class ProductListComponent {
   public pageTitle: string = 'Product List';
   public errorMessage: string = '';
-  private categories: string;
+  private categorySelectedSubject = new Subject<number>();
+  private categorySelectedAction$: Observable<number> = this.categorySelectedSubject.asObservable();
 
-  products$: Observable<Product[]> = this.productService.products$
+
+  products$: Observable<Product[]> = combineLatest([
+    this.productService.productsWithCategories$,
+    this.categorySelectedAction$
+      .pipe(
+        startWith(0)
+      )])
+    .pipe(
+      map(([products, selectedCategoryId]) =>
+        products.filter(product => selectedCategoryId ? product.categoryId == selectedCategoryId : true
+        )),
+      catchError(err => {
+        this.errorMessage = err;
+        return EMPTY;
+      })
+    );
+
+  categories$: Observable<ProductCategory[]> = this.productCategoryService.productCategories$
     .pipe(
       catchError(err => {
         this.errorMessage = err;
@@ -22,13 +42,13 @@ export class ProductListComponent {
       })
     );
 
-  constructor(private productService: ProductService) { }
+  constructor(private productService: ProductService, private productCategoryService: ProductCategoryService) { }
 
   onAdd(): void {
     console.log('Not yet implemented');
   }
 
   onSelected(categoryId: string): void {
-    console.log('Not yet implemented');
+    this.categorySelectedSubject.next(+categoryId);
   }
 }
