@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 
-import { Observable, throwError, combineLatest, BehaviorSubject, Subject, merge } from 'rxjs';
-import { catchError, tap, map, scan, shareReplay } from 'rxjs/operators';
+import { Observable, throwError, combineLatest, BehaviorSubject, Subject, merge, from } from 'rxjs';
+import { catchError, tap, map, scan, shareReplay, filter, mergeMap, toArray, switchMap } from 'rxjs/operators';
 
 import { Product } from './product';
 import { Supplier } from '../suppliers/supplier';
@@ -68,6 +68,26 @@ export class ProductService {
 
   private productInsertedSubject = new Subject<Product>()
   productInsertedAction$ = this.productInsertedSubject.asObservable();
+
+  selectedProductSuppliers$ = combineLatest(
+    this.selectedProduct$,
+    this.supplierService.suppliers$)
+    .pipe(
+      filter(([selectedProduct, suppliers]) => Boolean(selectedProduct)),
+      tap(() => console.log('selectedProductSuppliers')),
+      map(([selectedProduct, suppliers]) =>
+        suppliers.filter(supplier => selectedProduct.supplierIds.includes(supplier.id)))
+    );
+
+  selectedProductMergeMapSuppliers$ = this.selectedProduct$
+    .pipe(
+      filter(selectedProduct => Boolean(selectedProduct)),
+      switchMap(selectedProduct =>
+        from(selectedProduct.supplierIds)
+          .pipe(
+            mergeMap(id => this.supplierService.getSupplier(id)),
+            toArray()
+          )));
 
   productsWithAdd$ = merge(
     this.productsWithCategories$,
